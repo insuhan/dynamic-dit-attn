@@ -18,15 +18,16 @@ from typing import Any, Dict, Optional, Tuple, Union
 import torch
 from torch import nn
 
-from ...configuration_utils import ConfigMixin, register_to_config
-from ...utils import is_torch_version, logging
-from ...utils.torch_utils import maybe_allow_in_graph
-from ..attention import Attention, FeedForward
-from ..attention_processor import AttentionProcessor, CogVideoXAttnProcessor2_0, FusedCogVideoXAttnProcessor2_0
-from ..embeddings import CogVideoXPatchEmbed, TimestepEmbedding, Timesteps, get_3d_sincos_pos_embed
-from ..modeling_outputs import Transformer2DModelOutput
-from ..modeling_utils import ModelMixin
-from ..normalization import AdaLayerNorm, CogVideoXLayerNormZero
+from diffusers.configuration_utils import ConfigMixin, register_to_config
+from diffusers.utils import is_torch_version, logging
+from diffusers.utils.torch_utils import maybe_allow_in_graph
+from diffusers.models.attention import Attention, FeedForward
+import sys; sys.path.insert(0,"/workspace/dynamic-dit-attn/models");
+from attention_processor import AttentionProcessor, CogVideoXAttnProcessor2_0, FusedCogVideoXAttnProcessor2_0
+from diffusers.models.embeddings import CogVideoXPatchEmbed, TimestepEmbedding, Timesteps, get_3d_sincos_pos_embed
+from diffusers.models.modeling_outputs import Transformer2DModelOutput
+from diffusers.models.modeling_utils import ModelMixin
+from diffusers.models.normalization import AdaLayerNorm, CogVideoXLayerNormZero
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name

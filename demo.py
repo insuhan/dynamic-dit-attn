@@ -11,6 +11,8 @@ pipe = CogVideoXPipeline.from_pretrained(
     torch_dtype=torch.bfloat16
 )
 
+model = pipe.transformer
+
 pipe.enable_model_cpu_offload()
 pipe.vae.enable_tiling()
 
@@ -25,6 +27,8 @@ video = pipe(
 
 # 1. PIL -> images
 frames_dir = "./frames"
+if not os.path.exists(frames_dir):
+    os.makedirs(frames_dir)
 img1 = video[0]
 img1.save(os.path.join(frames_dir, "frame_000.png"))
 for fid in range(1, len(video)):
@@ -32,7 +36,7 @@ for fid in range(1, len(video)):
     img2.save(os.path.join(frames_dir, "frame_%03d.png" % fid))
 
 # 2. images -> video
-save_fps = 24
+save_fps = 12
 ofn = "output.mp4"
 os.system(f"ffmpeg  -y -loglevel error -f image2 -r {save_fps} -i {frames_dir}/frame_%03d.png -qmin 1 -q:v 1 -pix_fmt yuv420p {ofn}")
 import pdb; pdb.set_trace();

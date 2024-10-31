@@ -19,10 +19,10 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from ..image_processor import IPAdapterMaskProcessor
-from ..utils import deprecate, logging
-from ..utils.import_utils import is_torch_npu_available, is_xformers_available
-from ..utils.torch_utils import is_torch_version, maybe_allow_in_graph
+from diffusers.image_processor import IPAdapterMaskProcessor
+from diffusers.utils import deprecate, logging
+from diffusers.utils.import_utils import is_torch_npu_available, is_xformers_available
+from diffusers.utils.torch_utils import is_torch_version, maybe_allow_in_graph
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -1925,6 +1925,7 @@ class CogVideoXAttnProcessor2_0:
             if not attn.is_cross_attention:
                 key[:, :, text_seq_length:] = apply_rotary_emb(key[:, :, text_seq_length:], image_rotary_emb)
 
+        import pdb; pdb.set_trace();
         import torchvision
         layer_id = kwargs['layer_id']
         print(f"layer_id: {layer_id}, q.shape: {query.shape}, k.shape: {key.shape}, v.shape: {value.shape}")
