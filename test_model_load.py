@@ -14,6 +14,12 @@ from torch import nn
 # diffusers.models.transformers.cogvideox_transformer_3d.CogVideoXTransformer3DModel = CogVideoXTransformer3DModelNew
 # import accelerate
 
+prompt_id = 1
+sora_prompts = open("/workspace/project2_dit/Open-Sora/assets/texts/t2v_sora.txt", "r").readlines()
+prompt = sora_prompts[prompt_id]
+# prompt = "Several giant wooly mammoths approach treading through a snowy meadow, their long wooly fur lightly blows in the wind as they walk, snow covered trees and dramatic snow capped mountains in the distance, mid afternoon light with wispy clouds and a sun high in the distance creates a warm glow, the low camera view is stunning capturing the large furry mammal with beautiful photography, depth of field."
+print(f"prompt:\n{prompt}")
+
 LAYER_ID = 0
 def attention_forward(self, attn, hidden_states, encoder_hidden_states, attention_mask = None, image_rotary_emb = None, **kwargs):
     text_seq_length = encoder_hidden_states.size(1)
@@ -67,7 +73,10 @@ def attention_forward(self, attn, hidden_states, encoder_hidden_states, attentio
         os.makedirs("./metadata")
     if attn_scaled.ndim != 4:
         attn_scaled = attn_scaled.unsqueeze(0)
-    fname = f"./metadata/layer{layer_id}_attn_{size}_cond.pth"
+    fname = f"./metadata/sora_prompt{prompt_id}"
+    if not os.path.exists(fname):
+        os.makedirs(fname)
+    fname = f"{fname}/layer{layer_id}_attn_{size}_cond.pth"
     if os.path.exists(fname):
         res = torch.load(fname, map_location='cpu')
         res = torch.cat((res, attn_scaled), dim=0)
@@ -93,7 +102,7 @@ def attention_forward(self, attn, hidden_states, encoder_hidden_states, attentio
 
 diffusers.models.attention_processor.CogVideoXAttnProcessor2_0.__call__ = attention_forward
 
-prompt = "Several giant wooly mammoths approach treading through a snowy meadow, their long wooly fur lightly blows in the wind as they walk, snow covered trees and dramatic snow capped mountains in the distance, mid afternoon light with wispy clouds and a sun high in the distance creates a warm glow, the low camera view is stunning capturing the large furry mammal with beautiful photography, depth of field."
+
 
 pipe = CogVideoXPipeline.from_pretrained(
     "THUDM/CogVideoX-5b",
@@ -103,6 +112,9 @@ pipe = CogVideoXPipeline.from_pretrained(
 # pipe.transformer = None
 # torch.cuda.empty_cache()
 
+pipe.transformer.cuda()
+pipe.vae.cuda()
+pipe.text_encoder.cuda()
 # config_path = "/root/.cache/huggingface/hub/models--THUDM--CogVideoX-5b/snapshots/8d6ea3f817438460b25595a120f109b88d5fdfad/transformer/config.json"
 # config = json.load(open(config_path, "r"))
 # with accelerate.init_empty_weights():
@@ -131,16 +143,35 @@ pipe = CogVideoXPipeline.from_pretrained(
 # pipe.transformer = pipe.transformer.to(torch.bfloat16)
 # pipe.transformer.load_state_dict(tensors, strict=False)
 
-pipe.enable_model_cpu_offload()
+# pipe.enable_sequential_cpu_offload()
+# pipe.vae.enable_slicing()
+# pipe.vae.enable_tiling()
+
+# pipe.enable_model_cpu_offload()
 pipe.vae.enable_tiling()
 
 video = pipe(
     prompt=prompt,
     num_videos_per_prompt=1,
     num_inference_steps=50,
-    num_frames=49,
+    num_frames=40,
     guidance_scale=6,
     generator=torch.Generator(device="cuda").manual_seed(42),
 ).frames[0]
+
+# 1. PIL -> images
+frames_dir = "./frames"
+if not os.path.exists(frames_dir):
+    os.makedirs(frames_dir)
+img1 = video[0]
+img1.save(os.path.join(frames_dir, "frame_000.png"))
+for fid in range(1, len(video)):
+    img2 = video[fid]
+    img2.save(os.path.join(frames_dir, "frame_%03d.png" % fid))
+
+# 2. images -> video
+save_fps = 12
+ofn = "output.mp4"
+os.system(f"ffmpeg  -y -loglevel error -f image2 -r {save_fps} -i {frames_dir}/frame_%03d.png -qmin 1 -q:v 1 -pix_fmt yuv420p {ofn}")
 
 import pdb; pdb.set_trace();

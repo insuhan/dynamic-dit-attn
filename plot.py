@@ -72,5 +72,30 @@ def png_to_gif():
     import pdb; pdb.set_trace();
 
 if __name__ == "__main__":
-    save_figures()
+    # save_figures()
     # png_to_gif()
+
+    # prompt_id = 1
+    # layer_id = 1
+    step_id = 1
+    cond_type = 'cond'
+
+    for layer_id in [0,1,2,3,4]:
+        for prompt_id in [0,1]:
+            print(f"sora_prompt{prompt_id}, layer: {layer_id}, {cond_type}, step: {step_id}/{50}...")
+
+            attn_scaled = torch.load(f"./metadata/sora_prompt{prompt_id}/layer{layer_id}_attn_128_{cond_type}.pth", map_location='cpu')
+
+            fig, ax = plt.subplots(6, 8, figsize=(18, 12))
+            fig.suptitle(f"sora_prompt{prompt_id}, layer: {layer_id}, {cond_type}, step: {step_id}/{50}", fontsize=16)
+            for i in range(6):
+                for j in range(8):
+                    head_id = i*8 + j
+                    ax[i][j].set_title(f"head{head_id}")
+                    sns.heatmap(
+                        attn_scaled[step_id, head_id],
+                        annot=False, square=True, cmap="crest", cbar=True,
+                        ax=ax[i][j], cbar_kws={"shrink": 0.75},
+                        xticklabels=False, yticklabels=False) # vmin=0.0, vmax=1.0,
+            fig.tight_layout()
+            plt.savefig(f"./attn_heatmap_step{step_id}_layer{layer_id}_sora{prompt_id}.png")

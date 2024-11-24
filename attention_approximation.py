@@ -11,7 +11,8 @@ def sliding_window_attn(query, key, value, window_ratio=1/32):
     window_size = int(window_ratio * window_ratio)
     return flash_attn_func(query.transpose(1,2), key.transpose(1,2), value.transpose(1,2), window_size=(ws, ws))
 
-
+def hyper_attn():
+    pass
 
 
 # b = 1
